@@ -50,6 +50,9 @@ body, .modal {
     line-height: 1.5;
     background: var(--color-main);
 }
+*, *::before, *::after {
+    box-sizing: border-box;
+}
 body {
     margin-top: 30px;
 }
@@ -161,8 +164,8 @@ h1{
     padding-right:calc(var(--zoom) * 20px);
 }
 .tileImg {
-    width:calc(var(--tile-img-width));
-    height:calc(var(--tile-img-height));
+    width:calc(var(--tile-img-width) + 4px);
+    height:calc(var(--tile-img-height) + 4px);
     background:white;
     filter:brightness(92%) saturate(80%);
     box-shadow: inset 0 0 calc(var(--zoom-tiles)*2px) black;
@@ -307,13 +310,13 @@ h1{
     grid-template-columns: 1fr;
     grid-template-rows: calc(var(--zoom-tiles) * 50px) 0;
 }
-.sidebar {
-    margin:10px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    gap: 10px;
-}
+/*.sidebar {*/
+/*    margin:10px;*/
+/*    display: flex;*/
+/*    flex-wrap: wrap;*/
+/*    justify-content: space-around;*/
+/*    gap: 10px;*/
+/*}*/
 .opt-info table {
     width: 220px;
     margin:10px;
@@ -459,7 +462,7 @@ code {
 
 .panel{width:360px;height:calc(var(--zoom) * 650px);padding:24px;background:white;color:black;overflow:auto}
 label{display:block;font-size:13px;margin-top:10px}
-input[type=text], textarea, select{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:14px}
+input[type=text], input[type=number], textarea, select{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:14px}
 textarea{height:80px;resize:vertical}
 .row{display:flex;gap:8px}
 .btn{margin-top:16px;padding:10px 14px;border-radius:6px;border:0;background:#3a8;cursor:pointer;color:white}
