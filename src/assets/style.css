@@ -420,7 +420,7 @@ table, th, td {
 .controls > *:hover {
     background:var(--color-hover);
 }
-button:hover, select:hover {
+button:hover, select:hover, .btn:hover {
     background:var(--color-hover);
 }
 .killer-call-div {

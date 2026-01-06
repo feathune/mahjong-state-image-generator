@@ -2,6 +2,7 @@
 // import HelloWorld from './components/HelloWorld.vue'
 // import TheWelcome from './components/TheWelcome.vue'
 import {ref, computed} from "vue";
+import {useImportExport} from "@/composables/useImportExport.js";
 
 "use strict";
 
@@ -31,6 +32,9 @@ const discards = computed(() => {
 })
 
 const activeCollapses = ref(['0', '1', '2', '3']);
+
+const stateRefs = {round, selfWind, points, selfHandInput, discardInputs}
+const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(stateRefs)
 </script>
 
 <template>
@@ -170,7 +174,12 @@ const activeCollapses = ref(['0', '1', '2', '3']);
           </el-collapse>
 
           <div class="row">
-            <button class="btn" id="exportBtn">Export PNG</button>
+<!--            <button class="btn" id="importBtn">Import PNG</button>-->
+            <label class="btn">
+              Import PNG
+              <input type="file" accept=".png" @change="importMetadataFromPNG" style="display: none;" />
+            </label>
+            <button class="btn" id="exportBtn" @click="exportPngWithMetadata">Export PNG</button>
           </div>
         </div>
       </div>
