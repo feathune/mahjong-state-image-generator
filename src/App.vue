@@ -26,7 +26,7 @@ const discardInputs = ref([
 ])
 const discards = computed(() => {
   return discardInputs.value.map(text =>
-      text.trim().split(/\s+/)
+      text.trim().match(/([1-7][mpsz]|[89][mps])[a-zA-Z]?/g)
   )
 })
 
