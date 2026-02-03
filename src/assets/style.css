@@ -1,5 +1,5 @@
 :root{
-    --zoom: 1.0;
+    --zoom: 0.9;
     --media-break: 900px;
     /*
     zoom 0.5
@@ -21,16 +21,6 @@
     --color-hover: rgba(0, 0, 0, 0.3);
     --color-text:    hsla(190, 0%, 100%, 0.70);
 
-    /* Analagous to main: -> green-yellow -> yellow */
-    --color-bar-mortal: hsl(120, 70%, 34%);
-    --color-bar-hero: hsl(70, 60%, 48%);
-
-    --color-shimo: hsl(0, 60%, 60%);
-    --color-toimen: hsl(60, 60%, 60%);
-    --color-kami: hsl(277, 70%, 60%);
-    --color-shimo: hsl(0, 40%, 50%);
-    --color-toimen: hsl(180, 40%, 50%);
-    --color-kami: hsl(270, 40%, 50%);
     /* Discard tsumogiri background: Mix in some color and make less bright */
     /* The brightness affects both background and foreground, the color only affects the background */
     --color-tsumogiri: hsl(30, 100%, 92%);
@@ -38,10 +28,7 @@
     --color-tile-bg: hsl(0, 0%, 92%);
     --opacity-called: 0.25;
 }
-/* .big-win     { background: hsl(120, 60%, 24%); }
-.medium-win  { background: hsl(120, 60%, 16%); } */
-.medium-loss { background: hsl(60, 60%, 16%); }
-.big-loss    { background: hsl(30, 60%, 16%); }
+
 body, .modal {
     font-family: sans-serif;
     max-width: 1100px;
@@ -74,11 +61,7 @@ body {
     top: 5px;
     background: var(--color-accent2);
 }
-#generic-modal .close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
+
 a {
     color: var(--color-text);
 }
@@ -102,10 +85,10 @@ h1{
 .grid-main{
     flex-shrink: 0;
     display: grid;
-    width:calc(var(--zoom) * 655px);
-    height:calc(var(--zoom) * 735px);
-    grid-template-columns: calc(90/655*100%) calc(135/655*100%) calc(205/655*100%) calc(135/655*100%) calc(90/655*100%);
-    grid-template-rows: calc(90/735*100%) calc(135/735*100%) calc(205/735*100%) calc(135/735*100%) calc((90 + 70)/735*100%);
+    width:calc(var(--zoom) * 835px);
+    height:calc(var(--zoom) * 835px);
+    grid-template-columns: calc(90/835*100%) calc(225/835*100%) calc(205/835*100%) calc(225/835*100%) calc(90/835*100%);
+    grid-template-rows: calc(90/835*100%) calc(225/835*100%) calc(205/835*100%) calc(225/835*100%) calc(90/835*100%);
     grid-template-areas: "ah-p2 ah-p2 ah-p2   ah-p2 ah-p1"
                          "ah-p3     . ad-p2   .     ah-p1"
                          "ah-p3 ad-p3 a-info  ad-p1 ah-p1"
@@ -131,10 +114,8 @@ h1{
     grid-area: ah-p1;
     flex-direction: column-reverse;
 }
-.grid-hand-p0-container{
+.grid-hand-p0 {
     grid-area: ah-p0;
-    background: var(--color-accent);
-    padding-top: calc(var(--zoom) * 10px);
 }
 .hand-closed-p3 {display: flex; flex-direction: column; }
 .hand-closed-p2 {display: flex; flex-direction: row-reverse; }
@@ -145,8 +126,9 @@ h1{
 .hand-calls-p1 {display: flex; flex-direction: column-reverse; }
 .hand-calls-p0 {display: flex; flex-direction: row; }
 .grid-hand-p0{
-    padding-left: calc(var(--zoom) * 5px);
     padding-right: calc(var(--zoom) * 15px);
+    padding-left: calc(var(--zoom) * 5px);
+    padding-top: calc(var(--zoom) * 20px);
 }
 .grid-hand-p1{
     padding-top: calc(var(--zoom) * 15px);
@@ -183,38 +165,36 @@ h1{
     opacity:var(--opacity-called);
 }
 .tileDiv { width:var(--tile-width); height:var(--tile-height); }
-.pov-p1 > div { width:var(--tile-height); height:var(--tile-width); }
-.pov-p3 > div { width:var(--tile-height); height:var(--tile-width); }
-.pov-p1 > div { width:var(--tile-height); height:var(--tile-width); }
-.pov-p3 > div { width:var(--tile-height); height:var(--tile-width); }
-.pov-p0 > div:has(.rotate) { width:var(--tile-height); height:var(--tile-height); }
-.pov-p1 > div:has(.rotate) { width:var(--tile-height); height:var(--tile-height); }
-.pov-p2 > div:has(.rotate) { width:var(--tile-height); height:var(--tile-height); }
-.pov-p3 > div:has(.rotate) { width:var(--tile-height); height:var(--tile-height); }
-.pov-p0 > .narrow { width:calc(0.5 * var(--tile-width)); }
-.pov-p1 > .narrow { height:calc(0.5 * var(--tile-width)); }
-.pov-p2 > .narrow { width:calc(0.5 * var(--tile-width)); }
-.pov-p3 > .narrow { height:calc(0.5 * var(--tile-width)); }
+.pov-p1 .tileDiv { width:var(--tile-height); height:var(--tile-width); }
+.pov-p3 .tileDiv { width:var(--tile-height); height:var(--tile-width); }
+.pov-p0 .tileDiv:has(.rotate) { width:var(--tile-height); height:var(--tile-height); }
+.pov-p1 .tileDiv:has(.rotate) { width:var(--tile-height); height:var(--tile-height); }
+.pov-p2 .tileDiv:has(.rotate) { width:var(--tile-height); height:var(--tile-height); }
+.pov-p3 .tileDiv:has(.rotate) { width:var(--tile-height); height:var(--tile-height); }
+.pov-p0 .narrow { width:calc(0.5 * var(--tile-width)); }
+.pov-p1 .narrow { height:calc(0.5 * var(--tile-width)); }
+.pov-p2 .narrow { width:calc(0.5 * var(--tile-width)); }
+.pov-p3 .narrow { height:calc(0.5 * var(--tile-width)); }
 /* .pov-p0 > div > img  no transform needed */
-.pov-p0 > div > .rotate { transform-origin: bottom left; transform: rotate(90deg) translate(calc(-1 * var(--tile-width)), 0px); }
-.pov-p0 > div > .float { transform-origin: bottom left; transform: rotate(90deg) translate(calc(-2 * var(--tile-width)), var(--tile-height)); }
-.pov-p1 > div > img { transform-origin: top left; transform: rotate(-90deg) translate(calc(-1 * var(--tile-width)), 0px); }
-.pov-p1 > div > .rotate { float: right; transform: translate(0px, 0px); }
-.pov-p1 > div > .float { transform: translate(calc(-1 * var(--tile-width)), 0px);}
-.pov-p2 > div > img { transform: rotate(180deg); }
-.pov-p2 > div > .rotate { transform-origin: top left; transform: rotate(-90deg) translate(calc(-1 * var(--tile-width)), 0px); }
-.pov-p2 > div > .float { transform-origin: top left; transform: rotate(-90deg) translate(calc(-2 * var(--tile-width)), 0px); }
-.pov-p3 > div > img { float:right; transform-origin:top right; transform: rotate(90deg) translate(var(--tile-width), 0px); }
-.pov-p3 > div > .rotate { float:left; transform: translate(0px, 0px); }
-.pov-p3 > div > .float { transform: translate(var(--tile-width), calc(-1 * var(--tile-height))); }
-.pov-p0 > div:has(.float) { width:0px; height: 0px;}
-.pov-p1 > div:has(.float) { width:var(--tile-height); height: 0px;}
-.pov-p2 > div:has(.float) { width:0px; height: 0px;}
-.pov-p3 > div:has(.float) { width:0px; height: 0px;}
-.pov-p0 > div:has(.last-discard) { transform: translate(6px, 6px); }
-.pov-p1 > div:has(.last-discard) { transform: translate(6px, -6px); }
-.pov-p2 > div:has(.last-discard) { transform: translate(-6px, -6px); }
-.pov-p3 > div:has(.last-discard) { transform: translate(-6px, 6px); }
+.pov-p0 .tileDiv .rotate { transform-origin: bottom left; transform: rotate(90deg) translate(calc(-1 * var(--tile-width)), 0px); }
+.pov-p0 .tileDiv .float { transform-origin: bottom left; transform: rotate(90deg) translate(calc(-2 * var(--tile-width)), var(--tile-height)); }
+.pov-p1 .tileDiv img { transform-origin: top left; transform: rotate(-90deg) translate(calc(-1 * var(--tile-width)), 0px); }
+.pov-p1 .tileDiv .rotate { float: right; transform: translate(0px, 0px); }
+.pov-p1 .tileDiv .float { transform: translate(calc(-1 * var(--tile-width)), 0px);}
+.pov-p2 .tileDiv img { transform: rotate(180deg); }
+.pov-p2 .tileDiv .rotate { transform-origin: top left; transform: rotate(-90deg) translate(calc(-1 * var(--tile-width)), 0px); }
+.pov-p2 .tileDiv .float { transform-origin: top left; transform: rotate(-90deg) translate(calc(-2 * var(--tile-width)), 0px); }
+.pov-p3 .tileDiv img { float:right; transform-origin:top right; transform: rotate(90deg) translate(var(--tile-width), 0px); }
+.pov-p3 .tileDiv .rotate { float:left; transform: translate(0px, 0px); }
+.pov-p3 .tileDiv .float { transform: translate(var(--tile-width), calc(-1 * var(--tile-height))); }
+.pov-p0 .tileDiv:has(.float) { width:0px; height: 0px;}
+.pov-p1 .tileDiv:has(.float) { width:var(--tile-height); height: 0px;}
+.pov-p2 .tileDiv:has(.float) { width:0px; height: 0px;}
+.pov-p3 .tileDiv:has(.float) { width:0px; height: 0px;}
+.pov-p0 .tileDiv:has(.last-discard) { transform: translate(6px, 6px); }
+.pov-p1 .tileDiv:has(.last-discard) { transform: translate(6px, -6px); }
+.pov-p2 .tileDiv:has(.last-discard) { transform: translate(-6px, -6px); }
+.pov-p3 .tileDiv:has(.last-discard) { transform: translate(-6px, 6px); }
 
 .grid-discard{
     display:flex;
@@ -317,158 +297,28 @@ h1{
 /*    justify-content: space-around;*/
 /*    gap: 10px;*/
 /*}*/
-.opt-info table {
-    width: 220px;
-    margin:10px;
-    background:var(--color-accent);
-}
-.opt-info table .tileImg {
-    width:calc(var(--tile-img-width) * 0.50);
-    height:calc(var(--tile-img-height) * 0.50);
-    margin:0px;
-}
-.controls {
-    display:grid;
-    grid-template-columns: repeat(2, calc(var(--zoom)*120px));
-    padding:10px;
-    background:var(--color-accent);
-}
-.controls > * {
-    margin:2px;
-    padding:12px;
-    background: var(--color-accent2);
-    color:var(--color-text);
-    border-color:black;
-    border-width:2px;
-}
 
-.info-round {
-    background: var(--color-accent2);
-    color:var(--color-text);
-    border-style:outset;
-    border-color:black;
-    border-width:2px;
-}
-.modal::backdrop {
-    background: rgb(0 0 0 / .3);
-}
-.info-this-round-modal {
-    background: var(--color-accent);
-    border-color: var(--color-accent2);
-    border-width: 5px;
-    border-style:outset;
-}
-table, th, td {
-    white-space: nowrap;
-    border-collapse: collapse;
-}
-#about-modal td {
-    border: 1px solid var(--color-text);
-    padding:0.4rem;
-}
-.info-round-table table,
-.info-round-table th,
-.info-round-table td {
-    text-align: right;
-    border: 1px solid var(--color-text);
-    padding: 0.4rem;
-    background: var(--color-accent);
-}
-.info-this-round-table table,
-.info-this-round-table th,
-.info-this-round-table td {
-    text-align: right;
-    border: 1px solid var(--color-text);
-    padding: 0.4rem;
-    background: var(--color-accent2);
-}
-.hover-rows tr:hover td,
-.info-round-table tr:hover td {
-    background:var(--color-hover);
-}
-.info-this-round-table > * {
-    margin: 2px;
-    text-wrap: nowrap;
-}
-.generic-modal-body * {
-    margin: 2px;
-}
-.generic-modal-body .tileImg {
-    width:calc(var(--tile-img-width) * 0.50);
-    height:calc(var(--tile-img-height) * 0.50);
-    margin:0px;
-}
-.generic-modal-body .tileDiv {
-    width:calc(var(--tile-img-width) * 0.50 + 2px);
-    height:calc(var(--tile-img-height) * 0.50 + 2px);
-    margin:0px;
-}
-.generic-modal-body table {
-    background: var(--color-accent);
-    padding:5px;
-}
-.generic-modal-body td {
-    padding: 4px;
-    text-align: right;
-}
+
 .wider-table td {
     padding-left: 10px;
     padding-right: 10px;
     padding-top: 6px;
     padding-bottom: 6px;
 }
-.controls > *:hover {
-    background:var(--color-hover);
-}
 button:hover, select:hover, .btn:hover {
     background:var(--color-hover);
 }
-.killer-call-div {
-    display:grid;
-}
-.killer-call-bars {
-    background: var(--color-accent3);
-    padding: 10px;
-    width: calc(var(--zoom)*260px);
-    height: calc(var(--zoom)*110px);
-    margin: auto;
-}
-.killer-call-img {
-    margin: auto;
-    width:calc(var(--zoom)*128px);
-    margin-top: 20px;
-}
-.about-metadata table {
-    margin:auto;
-    margin-top:20px;
-}
-.about-metadata td:first-child {
-    text-align: right;
-}
-.about-metadata td:nth-child(2) {
-    text-align: left;
-}
-#about-body-1 td:first-child {
-    text-align:right;
-}
-#about-body-1 td:nth-child(2) {
-    text-align:left;
-}
+
 code {
     background-color: var(--color-accent);
     padding: 3px;
 }
 
 
-.panel{width:360px;height:calc(var(--zoom) * 650px);padding:24px;background:white;color:black;overflow:auto}
-label{display:block;font-size:13px;margin-top:10px}
-input[type=text], input[type=number], textarea, select{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:14px}
+.panel{width:350px;height:calc(var(--zoom) * 835px);padding:24px;background:white;color:black;overflow:auto}
 textarea{height:80px;resize:vertical}
 .row{display:flex;gap:8px}
 .btn{margin-top:16px;padding:10px 14px;border-radius:6px;border:0;background:#3a8;cursor:pointer;color:white}
-.el-collapse {
-    margin-top: 30px;
-}
 
 
 /* @media screen and (max-width: 900px) { */
@@ -491,5 +341,19 @@ textarea{height:80px;resize:vertical}
     }
     .opt-info {
         display:none;
+    }
+}
+/* from updateZoom() */
+@media (max-width: 900px) {
+    @media (orientation: portrait) {
+        :root {
+            --zoom: calc(100vw / 835px * 0.9);
+        }
+    }
+    @media (orientation: landscape) {
+        :root {
+            /* 注意：CSS 无法直接减去固定像素再除，但可近似 */
+            --zoom: calc((100vh - 50px) / 855px * 0.9);
+        }
     }
 }

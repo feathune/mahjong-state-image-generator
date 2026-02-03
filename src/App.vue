@@ -1,12 +1,12 @@
 <script setup>
-// import HelloWorld from './components/HelloWorld.vue'
-// import TheWelcome from './components/TheWelcome.vue'
-import {ref, computed} from "vue";
+import {ref, computed, reactive, provide} from "vue";
 import {useImportExport} from "@/composables/useImportExport.js";
+import InputPanel from "@/components/InputPanel.vue";
+import Tile from "@/components/Tile.vue";
+import Call from "@/components/Call.vue";
 
 "use strict";
 
-const round = ref('E1')
 const windStr = ['E', 'S', 'W', 'N']
 const selfWind = ref(0)   // 0:E 1:S 2:W 3:N
 const playerWinds = computed(() => {
@@ -19,37 +19,64 @@ const selfHandInput = ref('1m 1m 1m 2m 3m 4m 0m 5m 6m 7m 8m 9m 9m 9m')
 const selfHands = computed(() =>
     selfHandInput.value.trim().split(/\s+/)
 )
-const discardInputs = ref([
-  '1p 1p 9s 5z 7z 2z 3z 3z 9m 4m',
-  '1p 1p 9s 5z 7z 2z 3z 3z 9m 4m',
-  '1p 1p 9s 5z 7z 2z 3z 3z 9m 4m',
-  '1p 1p 9s 5z 7z 2z 3z 3z 9m 4m'
-])
+
+const gameState = reactive({
+  round: 'S4',
+  honba: 1,
+  storedStick: 1,
+  doraInput: '9p 2p',
+  selfWind: 2,   // 0:E 1:S 2:W 3:N
+  points: [40200, 46700, 8300, 2800],
+  selfClosedHandInput: '4556778m7m',
+  callInputs: ['C2m3m4m 6z6zP6z', 'C2p3p4p C7p6p8p', '7s7s7sA7s', ''],
+  discardInputs: [
+      '4z 1z 2s 9p 5zt 7pc\n2pc 1p 3zt 9pt 2z 2st\n2pt 6st 4pt 2mt 9pt 4pt',
+      '3z 7z 6zc 1st 9mt 1m\n1m 7zt 9st 3zt 1st 4z\n5z 3s 3s 1pt 1s 8pt',
+      '2z 1z 8p 6p 1zt 9s\n9s 7pt 7zt 2zt 5st 2mr\n3st 2pt 7pt 7pt 1st 2zt',
+      '2s 7z 2st 1m 5zt 5p\n8p 5pt 3s 2mc 0pt 9sr\n1pt 1pt 9mt 3zt 1mt 6pt'
+  ]
+})
+
+function compactFormatToArray(str) {
+  let output = []
+  let suit = ''
+  for (let i = str.length - 1; i >= 0; i --) {
+    if (isNaN(str[i])) {
+      suit = str[i]
+    } else {
+      output.push(str[i] + suit)
+    }
+  }
+  output.reverse()
+  return output
+}
+
+const selfClosedHands = computed(() =>
+    compactFormatToArray(gameState.selfClosedHandInput)
+)
+
 const discards = computed(() => {
-  return discardInputs.value.map(text =>
-      text.trim().match(/([1-7][mpsz]|[89][mps])[a-zA-Z]?/g)
+  return gameState.discardInputs.map(text =>
+      text.trim().match(/([1-7][mpsz]|[089][mps])[tcr]*/g)
   )
 })
 
-const activeCollapses = ref(['0', '1', '2', '3']);
-
-const stateRefs = {round, selfWind, points, selfHandInput, discardInputs}
-const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(stateRefs)
+provide('gameState', gameState)
 </script>
 
 <template>
   <main>
     <div class="outer">
       <div class="grid-main">
-        <div class="grid-hand-p0-container">
-          <span id="discard-bars" class="discard-bars"></span>
-          <div class="grid-hand pov-p0 grid-hand-p0">
-            <div class="pov-p0 hand-closed-p0">
-              <div v-for="tile in selfHands" class="tileDiv">
-                <img class="tileImg" :src="`src/assets/Regular_shortnames/${tile}.svg`" :alt="tile"/>
-              </div>
+        <div class="grid-hand pov-p0 grid-hand-p0">
+          <div class="pov-p0 hand-closed-p0">
+            <div v-for="(tile, index) in selfClosedHands" :key="tile" style="display: flex">
+              <Tile v-if="index === selfClosedHands.length - 1" data="back" class="narrow" style="visibility: hidden"/>
+              <Tile :data="tile"/>
             </div>
-            <span class="pov-p0 hand-calls-p0"></span>
+          </div>
+          <div class="pov-p0 hand-calls-p0">
+            <Call v-for="call in gameState.callInputs[0].split(' ')" :key="call" :data="call"/>
           </div>
         </div>
         <div class="grid-hand pov-p3 grid-hand-p3">
@@ -77,27 +104,19 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(stateRefs
           <span class="pov-p1 hand-calls-p1"></span>
         </div>
         <div class="grid-discard pov-p0 grid-discard-p0">
-          <div v-for="tile in discards[0]" class="tileDiv">
-            <img class="tileImg" :src="`src/assets/Regular_shortnames/${tile}.svg`" :alt="tile"/>
-          </div>
+          <Tile v-for="tile in discards[0]" :key="tile" :data="tile"></Tile>
         </div>
         <div class="grid-discard pov-p3 grid-discard-p3">
-          <div v-for="tile in discards[3]" class="tileDiv">
-            <img class="tileImg" :src="`src/assets/Regular_shortnames/${tile}.svg`" :alt="tile"/>
-          </div>
+          <Tile v-for="tile in discards[3]" :key="tile" :data="tile"></Tile>
         </div>
         <div class="grid-discard pov-p2 grid-discard-p2">
-          <div v-for="tile in discards[2]" class="tileDiv">
-            <img class="tileImg" :src="`src/assets/Regular_shortnames/${tile}.svg`" :alt="tile"/>
-          </div>
+          <Tile v-for="tile in discards[2]" :key="tile" :data="tile"></Tile>
         </div>
         <div class="grid-discard pov-p1 grid-discard-p1">
-          <div v-for="tile in discards[1]" class="tileDiv">
-            <img class="tileImg" :src="`src/assets/Regular_shortnames/${tile}.svg`" :alt="tile"/>
-          </div>
+          <Tile v-for="tile in discards[1]" :key="tile" :data="tile"></Tile>
         </div>
         <div class="grid-info">
-          <button class="info-round">{{ round }}</button>
+          <button class="info-round">{{ gameState.round }}</button>
           <span class="info-tiles-left"></span>
           <span class="info-honbas"></span>
           <span class="info-doras"></span>
@@ -108,82 +127,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(stateRefs
         </div>
       </div>
       <div class="sidebar">
-        <div class="panel">
-          <h2>输入场况并渲染</h2>
-          <label><input id="showOthersHands" type="checkbox"> Show others' hands</label>
-          <label>Round
-            <select v-model="round">
-              <option value="E1">E1</option>
-              <option value="E2">E2</option>
-              <option value="E3">E3</option>
-              <option value="E4">E4</option>
-              <option value="S1">S1</option>
-              <option value="S2">S2</option>
-              <option value="S3">S3</option>
-              <option value="S4">S4</option>
-            </select>
-          </label>
-          <el-collapse v-model="activeCollapses" expand-icon-position="left">
-            <el-collapse-item title="Self" name="0">
-              <label>Seat Wind
-                <select v-model.number="selfWind">
-                  <option value="0">E</option>
-                  <option value="1">S</option>
-                  <option value="2">W</option>
-                  <option value="3">N</option>
-                </select>
-              </label>
-              <label>Point
-                <input type="number" step="100" v-model.number="points[0]"/>
-              </label>
-              <label>Hand (compact format: e.g. 227m45p55s0m means 2,2,7 man; 4,5 pin; 5,5 sou; red5 man)
-                <input type="text" v-model="selfHandInput"/>
-              </label>
-
-              <label>Discard (space or newline separated)
-                <textarea v-model="discardInputs[0]"></textarea>
-              </label>
-            </el-collapse-item>
-
-            <el-collapse-item title="Right" name="1">
-              <label>Point
-                <input type="number" step="100" v-model.number="points[1]"/>
-              </label>
-              <label>Discard (space or newline separated)
-                <textarea v-model="discardInputs[1]"></textarea>
-              </label>
-            </el-collapse-item>
-
-            <el-collapse-item title="Opposite" name="2">
-              <label>Point
-                <input type="number" step="100" v-model.number="points[2]"/>
-              </label>
-              <label>Discard (space or newline separated)
-                <textarea v-model="discardInputs[2]"></textarea>
-              </label>
-            </el-collapse-item>
-
-            <el-collapse-item title="Left" name="3">
-              <label>Point
-                <input type="number" step="100" v-model.number="points[3]"/>
-              </label>
-              <label>Discard (space or newline separated)
-                <textarea v-model="discardInputs[3]"></textarea>
-              </label>
-            </el-collapse-item>
-          </el-collapse>
-
-          <div class="row">
-<!--            <button class="btn" id="importBtn">Import PNG</button>-->
-            <label class="btn">
-              Import PNG
-              <input type="file" accept=".png" @change="importMetadataFromPNG" style="display: none;" />
-            </label>
-            <button class="btn" id="exportBtn" @click="exportPngWithMetadata">Export PNG</button>
-          </div>
-        </div>
-      </div>
-      <div class="opt-info">
+        <InputPanel></InputPanel>
       </div>
     </div>
   </main>

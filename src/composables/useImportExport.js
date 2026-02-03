@@ -1,11 +1,7 @@
 import { toPng, toJpeg, toBlob, toPixelData, toSvg } from 'html-to-image';
 import { addMetadata, getMetadata } from 'meta-png';
 
-export function useImportExport(stateRefs) {
-    // stateRefs 应包含所有需要序列化的 ref 对象，例如：
-    // {
-    //   round, wind, points, selfHandInput, discardInputs, ...
-    // }
+export function useImportExport(gameState) {
 
     const exportToJson = () => {
         const data = {
