@@ -28,7 +28,7 @@ const gameState = reactive({
   selfWind: 2,   // 0:E 1:S 2:W 3:N
   points: [40200, 46700, 8300, 2800],
   selfClosedHandInput: '4556778m7m',
-  callInputs: ['C2m3m4m 6z6zP6z', 'C2p3p4p C7p6p8p', '7s7s7sA7s', ''],
+  calls: [['C2m3m4m', '6z6zP6z'], ['C2p3p4p', 'C7p6p8p'], ['A7s'], []],
   discardInputs: [
       '4z 1z 2s 9p 5zt 7pc\n2pc 1p 3zt 9pt 2z 2st\n2pt 6st 4pt 2mt 9pt 4pt',
       '3z 7z 6zc 1st 9mt 1m\n1m 7zt 9st 3zt 1st 4z\n5z 3s 3s 1pt 1s 8pt',
@@ -76,7 +76,7 @@ provide('gameState', gameState)
             </div>
           </div>
           <div class="pov-p0 hand-calls-p0">
-            <Call v-for="call in gameState.callInputs[0].split(' ')" :key="call" :data="call"/>
+            <Call v-for="call in gameState.calls[0]" :key="call" :data="call"/>
           </div>
         </div>
         <div class="grid-hand pov-p3 grid-hand-p3">
