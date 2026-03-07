@@ -31,13 +31,11 @@ if (data.includes('C') || data.includes('P') || data.includes('M')) {
 </script>
 
 <template>
-  <div class="root">
+  <div class="call">
     <Tile v-for="tile in tileData" :key="tile" :data="tile"/>
   </div>
 </template>
 
 <style scoped>
-.root {
-  display: flex;
-}
+
 </style>

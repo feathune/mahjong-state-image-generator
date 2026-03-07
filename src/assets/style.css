@@ -121,10 +121,10 @@ h1{
 .hand-closed-p2 {display: flex; flex-direction: row-reverse; }
 .hand-closed-p1 {display: flex; flex-direction: column-reverse; }
 .hand-closed-p0 {display: flex; flex-direction: row; }
-.hand-calls-p3 {display: flex; flex-direction: column; }
-.hand-calls-p2 {display: flex; flex-direction: row-reverse; }
-.hand-calls-p1 {display: flex; flex-direction: column-reverse; }
-.hand-calls-p0 {display: flex; flex-direction: row; }
+.hand-calls-p3, .hand-calls-p3 .call {display: flex; flex-direction: column; }
+.hand-calls-p2, .hand-calls-p2 .call {display: flex; flex-direction: row-reverse; }
+.hand-calls-p1, .hand-calls-p1 .call {display: flex; flex-direction: column-reverse; }
+.hand-calls-p0, .hand-calls-p0 .call {display: flex; flex-direction: row; }
 .grid-hand-p0{
     padding-right: calc(var(--zoom) * 15px);
     padding-left: calc(var(--zoom) * 5px);
@@ -278,12 +278,12 @@ h1{
     margin: calc(var(--zoom) * 10px) auto;
 }
 .info-doras > * > * {
-    width:calc(var(--tile-img-width) * 0.58);
-    height:calc(var(--tile-img-height) * 0.58);
+    width:calc(var(--tile-img-width) * 0.7 + 4px);
+    height:calc(var(--tile-img-height) * 0.7 + 4px);
 }
 .info-doras > * {
-    width:calc(var(--tile-img-width) * 0.58 + 4px);
-    height:calc(var(--tile-img-height) * 0.58 + 4px);
+    width:calc(var(--tile-img-width) * 0.7 + 4px);
+    height:calc(var(--tile-img-height) * 0.7 + 4px);
 }
 .discard-bars {
     display: grid;
