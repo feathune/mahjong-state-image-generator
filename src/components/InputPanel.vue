@@ -1,5 +1,5 @@
 <script setup>
-import {computed, inject, reactive, ref} from 'vue'
+import {computed, inject, reactive, ref, watchEffect} from 'vue'
 import {useImportExport} from "@/composables/useImportExport.js"
 
 const gameState = inject('gameState')
@@ -31,89 +31,89 @@ const discardInputs = reactive({
   errors: ['', '', '', '']
 })
 
-const doraProxy = computed({
-  get() {
-    return doraInput.raw
-  },
-  set(value) {
-    validateDora(value)
-  }
-})
-const selfClosedHandProxy = computed({
-  get() {
-    return selfClosedHandInput.raw
-  },
-  set(value) {
-    validateSelfClosedHand(value)
-  }
-})
-const callProxy0 = computed({
-  get() {
-    return callInputs.raw[0]
-  },
-  set(value) {   // @input
-    validateCall(0, value)
-  }
-})
-const callProxy1 = computed({
-  get() {
-    return callInputs.raw[1]
-  },
-  set(value) {
-    validateCall(1, value)
-    gameState.closedHands[1] = 13 - gameState.calls[1].length * 3
-  }
-})
-const callProxy2 = computed({
-  get() {
-    return callInputs.raw[2]
-  },
-  set(value) {
-    validateCall(2, value)
-    gameState.closedHands[2] = 13 - gameState.calls[2].length * 3
-  }
-})
-const callProxy3 = computed({
-  get() {
-    return callInputs.raw[3]
-  },
-  set(value) {
-    validateCall(3, value)
-    gameState.closedHands[3] = 13 - gameState.calls[3].length * 3
-  }
-})
-const discardProxy0 = computed({
-  get() {
-    return discardInputs.raw[0]
-  },
-  set(value) {
-    validateDiscard(0, value)
-  }
-})
-const discardProxy1 = computed({
-  get() {
-    return discardInputs.raw[1]
-  },
-  set(value) {
-    validateDiscard(1, value)
-  }
-})
-const discardProxy2 = computed({
-  get() {
-    return discardInputs.raw[2]
-  },
-  set(value) {
-    validateDiscard(2, value)
-  }
-})
-const discardProxy3 = computed({
-  get() {
-    return discardInputs.raw[3]
-  },
-  set(value) {
-    validateDiscard(3, value)
-  }
-})
+// const doraProxy = computed({
+//   get() {
+//     return doraInput.raw
+//   },
+//   set(value) {
+//     validateDora(value)
+//   }
+// })
+// const selfClosedHandProxy = computed({
+//   get() {
+//     return selfClosedHandInput.raw
+//   },
+//   set(value) {
+//     validateSelfClosedHand(value)
+//   }
+// })
+// const callProxy0 = computed({
+//   get() {
+//     return callInputs.raw[0]
+//   },
+//   set(value) {   // @input
+//     validateCall(0, value)
+//   }
+// })
+// const callProxy1 = computed({
+//   get() {
+//     return callInputs.raw[1]
+//   },
+//   set(value) {
+//     validateCall(1, value)
+//     gameState.closedHands[1] = 13 - gameState.calls[1].length * 3
+//   }
+// })
+// const callProxy2 = computed({
+//   get() {
+//     return callInputs.raw[2]
+//   },
+//   set(value) {
+//     validateCall(2, value)
+//     gameState.closedHands[2] = 13 - gameState.calls[2].length * 3
+//   }
+// })
+// const callProxy3 = computed({
+//   get() {
+//     return callInputs.raw[3]
+//   },
+//   set(value) {
+//     validateCall(3, value)
+//     gameState.closedHands[3] = 13 - gameState.calls[3].length * 3
+//   }
+// })
+// const discardProxy0 = computed({
+//   get() {
+//     return discardInputs.raw[0]
+//   },
+//   set(value) {
+//     validateDiscard(0, value)
+//   }
+// })
+// const discardProxy1 = computed({
+//   get() {
+//     return discardInputs.raw[1]
+//   },
+//   set(value) {
+//     validateDiscard(1, value)
+//   }
+// })
+// const discardProxy2 = computed({
+//   get() {
+//     return discardInputs.raw[2]
+//   },
+//   set(value) {
+//     validateDiscard(2, value)
+//   }
+// })
+// const discardProxy3 = computed({
+//   get() {
+//     return discardInputs.raw[3]
+//   },
+//   set(value) {
+//     validateDiscard(3, value)
+//   }
+// })
 
 function validateDora(input) {
   doraInput.error = ''
@@ -374,6 +374,17 @@ function validateDiscard(playerIdx, input) {
   gameState.discards[playerIdx] = discardInputs.parsed[playerIdx].map(part => part.text.trim())
 }
 
+function validate() {
+  validateDora(doraInput.raw)
+  validateSelfClosedHand(selfClosedHandInput.raw)
+  for (let i = 0; i < 4; i++) {
+    validateCall(i, callInputs.raw[i])
+    validateDiscard(i, discardInputs.raw[i])
+  }
+}
+
+watchEffect(() => validate())
+
 // Converts ['4m', '5m', '5m', '6m', '7m', '7m', '8m', '7m'] (already sorted) into '4556778m7m'
 function compactClosedHand(closedHandArray) {
   const parts = []
@@ -515,7 +526,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
       </el-form-item>
 
       <el-form-item label="Dora Indicator" :error="doraInput.error">
-        <el-input v-model="doraProxy"/>
+        <el-input v-model="doraInput.raw"/>
         <div v-if="!doraInput.valid" class="input-mirror">
               <span v-for="part in doraInput.parsed" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
@@ -536,7 +547,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
           </el-form-item>
 
           <el-form-item label="Closed Hand" label-position="top" :error="selfClosedHandInput.error">
-            <el-input v-model="selfClosedHandProxy"/>
+            <el-input v-model="selfClosedHandInput.raw"/>
             <div v-if="!selfClosedHandInput.valid" class="input-mirror">
               <span v-for="part in selfClosedHandInput.parsed" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
@@ -546,7 +557,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
           <el-divider v-if="!selfClosedHandInput.valid" border-style="none"/>
 
           <el-form-item label="Call" label-position="top" :error="callInputs.errors[0]">
-            <el-input v-model="callProxy0"/>
+            <el-input v-model="callInputs.raw[0]"/>
             <div v-if="!callInputs.valid[0]" class="input-mirror">
               <span v-for="part in callInputs.parsed[0]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
@@ -556,7 +567,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
           <el-divider v-if="!callInputs.valid[0]" border-style="none"/>
 
           <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[0]">
-            <el-input type="textarea" v-model="discardProxy0"/>
+            <el-input type="textarea" v-model="discardInputs.raw[0]"/>
             <div v-if="!discardInputs.valid[0]" class="input-mirror">
               <span v-for="part in discardInputs.parsed[0]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
@@ -572,7 +583,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
           </el-form-item>
 
           <el-form-item label="Call" label-position="top" :error="callInputs.errors[1]">
-            <el-input v-model="callProxy1"/>
+            <el-input v-model="callInputs.raw[1]"/>
             <div v-if="!callInputs.valid[1]" class="input-mirror">
               <span v-for="part in callInputs.parsed[1]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
@@ -582,7 +593,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
           <el-divider v-if="!callInputs.valid[1]" border-style="none"/>
 
           <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[1]">
-            <el-input type="textarea" v-model="discardProxy1"/>
+            <el-input type="textarea" v-model="discardInputs.raw[1]"/>
             <div v-if="!discardInputs.valid[1]" class="input-mirror">
               <span v-for="part in discardInputs.parsed[1]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
@@ -598,7 +609,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
           </el-form-item>
 
           <el-form-item label="Call" label-position="top" :error="callInputs.errors[2]">
-            <el-input v-model="callProxy2"/>
+            <el-input v-model="callInputs.raw[2]"/>
             <div v-if="!callInputs.valid[2]" class="input-mirror">
               <span v-for="part in callInputs.parsed[2]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
@@ -608,7 +619,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
           <el-divider v-if="!callInputs.valid[2]" border-style="none"/>
 
           <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[2]">
-            <el-input type="textarea" v-model="discardProxy2"/>
+            <el-input type="textarea" v-model="discardInputs.raw[2]"/>
             <div v-if="!discardInputs.valid[2]" class="input-mirror">
               <span v-for="part in discardInputs.parsed[2]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
@@ -624,7 +635,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
           </el-form-item>
 
           <el-form-item label="Call" label-position="top" :error="callInputs.errors[3]">
-            <el-input v-model="callProxy3"/>
+            <el-input v-model="callInputs.raw[3]"/>
             <div v-if="!callInputs.valid[3]" class="input-mirror">
               <span v-for="part in callInputs.parsed[3]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
@@ -634,7 +645,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
           <el-divider v-if="!callInputs.valid[3]" border-style="none"/>
 
           <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[3]">
-            <el-input type="textarea" v-model="discardProxy3"/>
+            <el-input type="textarea" v-model="discardInputs.raw[3]"/>
             <div v-if="!discardInputs.valid[3]" class="input-mirror">
               <span v-for="part in discardInputs.parsed[3]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
