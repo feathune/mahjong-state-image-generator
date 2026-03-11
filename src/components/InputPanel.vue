@@ -1,8 +1,21 @@
 <script setup>
-import {computed, inject, reactive, ref, watchEffect} from 'vue'
+import {inject, reactive, ref, watchEffect} from 'vue'
 import {useImportExport} from "@/composables/useImportExport.js"
 
 const gameState = inject('gameState')
+
+const tileCnt = new Map()
+function resetTileCnt() {
+  for (let t of [
+      '0m', '1m', '2m', '3m', '4m', '5m', '6m', '7m', '8m', '9m',
+      '0p', '1p', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p',
+      '0s', '1s', '2s', '3s', '4s', '5s', '6s', '7s', '8s', '9s',
+      '1z', '2z', '3z', '4z', '5z', '6z', '7z'
+  ]) {
+    tileCnt.set(t, [])
+  }
+}
+resetTileCnt()
 
 const activeCollapses = ref([0, 1, 2, 3])
 
@@ -31,90 +44,6 @@ const discardInputs = reactive({
   errors: ['', '', '', '']
 })
 
-// const doraProxy = computed({
-//   get() {
-//     return doraInput.raw
-//   },
-//   set(value) {
-//     validateDora(value)
-//   }
-// })
-// const selfClosedHandProxy = computed({
-//   get() {
-//     return selfClosedHandInput.raw
-//   },
-//   set(value) {
-//     validateSelfClosedHand(value)
-//   }
-// })
-// const callProxy0 = computed({
-//   get() {
-//     return callInputs.raw[0]
-//   },
-//   set(value) {   // @input
-//     validateCall(0, value)
-//   }
-// })
-// const callProxy1 = computed({
-//   get() {
-//     return callInputs.raw[1]
-//   },
-//   set(value) {
-//     validateCall(1, value)
-//     gameState.closedHands[1] = 13 - gameState.calls[1].length * 3
-//   }
-// })
-// const callProxy2 = computed({
-//   get() {
-//     return callInputs.raw[2]
-//   },
-//   set(value) {
-//     validateCall(2, value)
-//     gameState.closedHands[2] = 13 - gameState.calls[2].length * 3
-//   }
-// })
-// const callProxy3 = computed({
-//   get() {
-//     return callInputs.raw[3]
-//   },
-//   set(value) {
-//     validateCall(3, value)
-//     gameState.closedHands[3] = 13 - gameState.calls[3].length * 3
-//   }
-// })
-// const discardProxy0 = computed({
-//   get() {
-//     return discardInputs.raw[0]
-//   },
-//   set(value) {
-//     validateDiscard(0, value)
-//   }
-// })
-// const discardProxy1 = computed({
-//   get() {
-//     return discardInputs.raw[1]
-//   },
-//   set(value) {
-//     validateDiscard(1, value)
-//   }
-// })
-// const discardProxy2 = computed({
-//   get() {
-//     return discardInputs.raw[2]
-//   },
-//   set(value) {
-//     validateDiscard(2, value)
-//   }
-// })
-// const discardProxy3 = computed({
-//   get() {
-//     return discardInputs.raw[3]
-//   },
-//   set(value) {
-//     validateDiscard(3, value)
-//   }
-// })
-
 function validateDora(input) {
   doraInput.error = ''
   doraInput.raw = input
@@ -138,7 +67,11 @@ function validateDora(input) {
     doraInput.error = 'Too many doras'
     return
   }
-  gameState.doras = doraInput.parsed.map(part => part.text.trim())
+  const doras = doraInput.parsed.map(part => part.text.trim())
+  for (let t of doras) {
+    tileCnt.get(t).push({source: 'dora'})
+  }
+  return doras
 }
 function validateSelfClosedHand(input) {
   selfClosedHandInput.error = ''
@@ -166,12 +99,14 @@ function validateSelfClosedHand(input) {
         `Too many tiles for a 'which to discard' scenario. You should have ${expectedTileCnt} tiles in your closed hand`
     return
   }
+  for (let t of tileStrings) {
+    tileCnt.get(t).push({source: 'selfClosedHand'})
+  }
   // sort tiles (except last one)
   const lastTile = tileStrings.pop()
   const sorted = sortTiles(tileStrings)
   sorted.push(lastTile)
-  // update gameState
-  gameState.closedHands[0] = sorted
+  return sorted
 }
 function validateCall(playerIdx, input) {
   callInputs.errors[playerIdx] = ''
@@ -183,11 +118,12 @@ function validateCall(playerIdx, input) {
   callInputs.valid[playerIdx] = valid
   // validate call logic
   let callCnt = 0
-  for (let i = 0; i < callInputs.parsed[playerIdx].length; i++) {
-    if (callInputs.parsed[playerIdx][i].valid === false) {
-      continue
-    }
-    const tokens = callInputs.parsed[playerIdx][i].text.trim().match(/[CPAMK]|[1-7][mpsz]|[089][mps]/g)
+
+  /**
+   * @param tokens Tokens of the current call
+   * @param i Index of the current call
+   */
+  function validateCallLogic(tokens, i) {
     if (tokens.includes('C')) {
       if (tokens.length < 4) {
         callInputs.parsed[playerIdx][i].valid = false
@@ -338,6 +274,14 @@ function validateCall(playerIdx, input) {
         callCnt++
       }
     }
+  }
+
+  for (let i = 0; i < callInputs.parsed[playerIdx].length; i++) {
+    if (callInputs.parsed[playerIdx][i].valid === false) {
+      continue
+    }
+    const tokens = callInputs.parsed[playerIdx][i].text.trim().match(/[CPAMK]|[1-7][mpsz]|[089][mps]/g)
+    validateCallLogic(tokens, i);
     if (callCnt === 4) {
       if (i !== callInputs.parsed[playerIdx].length - 1) {
         callInputs.valid[playerIdx] = false
@@ -349,6 +293,7 @@ function validateCall(playerIdx, input) {
       }
     }
   }
+
   if (!callInputs.valid[playerIdx]) {
     callInputs.errors[playerIdx] = callInputs.errors[playerIdx] || 'Text in red is invalid in syntax'
   } else {
@@ -356,7 +301,27 @@ function validateCall(playerIdx, input) {
     for (const part of callInputs.parsed[playerIdx]) {
       newCalls.push(part.text.trim())
     }
-    gameState.calls[playerIdx] = newCalls
+
+    for (let c of newCalls) {
+      if (c[0] === 'A') {
+        const ankanTile = c.slice(1, 3)
+        if (ankanTile[0] === '5' || ankanTile[0] === '0') {
+          tileCnt.get(`0${ankanTile[1]}`).push({source: 'call', playerIdx: playerIdx})
+          tileCnt.get(`5${ankanTile[1]}`).push({source: 'call', playerIdx: playerIdx})
+          tileCnt.get(`5${ankanTile[1]}`).push({source: 'call', playerIdx: playerIdx})
+          tileCnt.get(`5${ankanTile[1]}`).push({source: 'call', playerIdx: playerIdx})
+        } else {
+          tileCnt.get(ankanTile).push(...Array(4).fill({source: 'call', playerIdx: playerIdx}))
+        }
+      } else {
+        const tiles = c.match(/[1-7][mpsz]|[089][mps]/g)
+        for (const t of tiles) {
+          tileCnt.get(t).push({source: 'call', playerIdx: playerIdx})
+        }
+      }
+    }
+
+    return newCalls
   }
 }
 function validateDiscard(playerIdx, input) {
@@ -371,16 +336,94 @@ function validateDiscard(playerIdx, input) {
     discardInputs.errors[playerIdx] = 'Text in red is invalid in syntax'
     return
   }
-  gameState.discards[playerIdx] = discardInputs.parsed[playerIdx].map(part => part.text.trim())
+  const discards = discardInputs.parsed[playerIdx].map(part => part.text.trim())
+  const tiles = discards.reduce((acc, d) => {
+    if (!d.includes('c')) {
+      acc.push(d.slice(0, 2))
+    }
+    return acc
+  }, [])
+  for (const t of tiles) {
+    tileCnt.get(t).push({source: 'discard', playerIdx: playerIdx})
+  }
+  return discards
+}
+
+function validateTileCnt() {
+  const exceededTiles = {
+    dora: new Set(),
+    selfClosedHand: new Set(),
+    call: [new Set(), new Set(), new Set(), new Set()],
+    discard: [new Set(), new Set(), new Set(), new Set()]
+  }
+  for (const [tile, sources] of tileCnt) {
+    if (sources.length > 4) {
+      for (const s of sources) {
+        if (s.source === 'dora' || s.source === 'selfClosedHand') {
+          exceededTiles[s.source].add(tile)
+        } else {
+          exceededTiles[s.source][s.playerIdx].add(tile)
+        }
+      }
+    }
+  }
+  for (const tile of exceededTiles.dora) {
+    doraInput.error += `Too many ${tile} on the table! `
+  }
+  for (const tile of exceededTiles.selfClosedHand) {
+    selfClosedHandInput.error += `Too many ${tile} on the table! `
+  }
+  for (let i = 0; i < 4; i++) {
+    for (const tile of exceededTiles.call[i]) {
+      callInputs.errors[i] += `Too many ${tile} on the table! `
+    }
+    for (const tile of exceededTiles.discard[i]) {
+      discardInputs.errors[i] += `Too many ${tile} on the table! `
+    }
+  }
 }
 
 function validate() {
-  validateDora(doraInput.raw)
-  validateSelfClosedHand(selfClosedHandInput.raw)
+  resetTileCnt()
+
+  const doras = validateDora(doraInput.raw)
+  const selfClosedHand = validateSelfClosedHand(selfClosedHandInput.raw)
+  const calls = []
+  const discards = []
   for (let i = 0; i < 4; i++) {
-    validateCall(i, callInputs.raw[i])
-    validateDiscard(i, discardInputs.raw[i])
+    calls.push(validateCall(i, callInputs.raw[i]))
+    discards.push(validateDiscard(i, discardInputs.raw[i]))
   }
+
+  validateTileCnt()
+
+  if (isStateValid()) {
+    gameState.doras = doras
+    gameState.closedHands[0] = selfClosedHand
+    gameState.calls = calls
+    for (let i = 1; i < 4; i++) {
+      gameState.closedHands[i] = 13 - gameState.calls[i].length * 3
+    }
+    gameState.discards = discards
+  }
+}
+
+function isStateValid() {
+  if (doraInput.error) {
+    return false
+  }
+  if (selfClosedHandInput.error) {
+    return false
+  }
+  for (let i = 0; i < 4; i++) {
+    if (callInputs.errors[i]) {
+      return false
+    }
+    if (discardInputs.errors[i]) {
+      return false
+    }
+  }
+  return true
 }
 
 watchEffect(() => validate())
@@ -533,7 +576,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
               </span>
         </div>
       </el-form-item>
-      <el-divider v-if="!doraInput.valid" border-style="none"/>
+      <el-divider v-if="doraInput.error" border-style="none"/>
 
       <el-collapse v-model="activeCollapses" expand-icon-position="left">
         <el-collapse-item title="Self" :name="0">
@@ -554,7 +597,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="!selfClosedHandInput.valid" border-style="none"/>
+          <el-divider v-if="selfClosedHandInput.error" border-style="none"/>
 
           <el-form-item label="Call" label-position="top" :error="callInputs.errors[0]">
             <el-input v-model="callInputs.raw[0]"/>
@@ -564,7 +607,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="!callInputs.valid[0]" border-style="none"/>
+          <el-divider v-if="callInputs.errors[0]" border-style="none"/>
 
           <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[0]">
             <el-input type="textarea" v-model="discardInputs.raw[0]"/>
@@ -574,7 +617,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="!discardInputs.valid[0]" border-style="none"/>
+          <el-divider v-if="discardInputs.errors[0]" border-style="none"/>
         </el-collapse-item>
 
         <el-collapse-item title="Right" :name="1">
@@ -590,7 +633,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="!callInputs.valid[1]" border-style="none"/>
+          <el-divider v-if="callInputs.errors[1]" border-style="none"/>
 
           <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[1]">
             <el-input type="textarea" v-model="discardInputs.raw[1]"/>
@@ -600,7 +643,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="!discardInputs.valid[1]" border-style="none"/>
+          <el-divider v-if="discardInputs.errors[1]" border-style="none"/>
         </el-collapse-item>
 
         <el-collapse-item title="Opposite" :name="2">
@@ -616,7 +659,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="!callInputs.valid[2]" border-style="none"/>
+          <el-divider v-if="callInputs.errors[2]" border-style="none"/>
 
           <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[2]">
             <el-input type="textarea" v-model="discardInputs.raw[2]"/>
@@ -626,7 +669,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="!discardInputs.valid[2]" border-style="none"/>
+          <el-divider v-if="discardInputs.errors[2]" border-style="none"/>
         </el-collapse-item>
 
         <el-collapse-item title="Left" :name="3">
@@ -642,7 +685,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="!callInputs.valid[3]" border-style="none"/>
+          <el-divider v-if="callInputs.errors[3]" border-style="none"/>
 
           <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[3]">
             <el-input type="textarea" v-model="discardInputs.raw[3]"/>
@@ -652,7 +695,7 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="!discardInputs.valid[3]" border-style="none"/>
+          <el-divider v-if="discardInputs.errors[3]" border-style="none"/>
         </el-collapse-item>
       </el-collapse>
     </el-form>
