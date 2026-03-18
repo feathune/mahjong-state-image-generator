@@ -36,8 +36,8 @@ const playerWinds = computed(() => Array.from({length: 4}, (_, i) => windStr[(ga
     <div class="outer">
       <div class="grid-main">
         <div class="grid-hand pov-p0 grid-hand-p0">
-          <div class="pov-p0 hand-closed-p0">
-            <div v-for="(tile, index) in gameState.closedHands[0]" :key="tile" style="display: flex">
+          <div class="pov-p0 hand-closed-p0" :key="JSON.stringify(gameState.closedHands[0])">
+            <div v-for="(tile, index) in gameState.closedHands[0]" style="display: flex">
               <Tile v-if="index === gameState.closedHands[0].length - 1" data="back" class="narrow" style="visibility: hidden"/>
               <Tile :data="tile"/>
             </div>

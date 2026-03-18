@@ -1,5 +1,5 @@
 <script setup>
-import {inject, reactive, ref, watchEffect} from 'vue'
+import {inject, reactive, ref, watch} from 'vue'
 import {useImportExport} from "@/composables/useImportExport.js"
 
 const gameState = inject('gameState')
@@ -19,86 +19,88 @@ resetTileCnt()
 
 const activeCollapses = ref([0, 1, 2, 3])
 
-const doraInput = reactive({
-  raw: gameState.doras.join(' '),
-  parsed: [],
-  valid: true,
-  error: ''
-})
-const selfClosedHandInput = reactive({
-  raw: compactClosedHand(gameState.closedHands[0]),
-  parsed: [],
-  valid: true,
-  error: ''
-})
-const callInputs = reactive({
-  raw: gameState.calls.map(callArray => callArray.join(' ')),
-  parsed: [[], [], [], []],
-  valid: [true, true, true, true],
-  errors: ['', '', '', '']
-})
-const discardInputs = reactive({
-  raw: gameState.discards.map(discardArray => stringifyDiscards(discardArray)),
-  parsed: [[], [], [], []],
-  valid: [true, true, true, true],
-  errors: ['', '', '', '']
+const inputs = reactive({
+  dora: {
+    raw: gameState.doras.join(' '),
+    parsed: [],
+    valid: true,
+    error: ''
+  },
+  selfClosedHand: {
+    raw: compactClosedHand(gameState.closedHands[0]),
+    parsed: [],
+    valid: true,
+    error: ''
+  },
+  call: {
+    raw: gameState.calls.map(callArray => callArray.join(' ')),
+    parsed: [[], [], [], []],
+    valid: [true, true, true, true],
+    errors: ['', '', '', '']
+  },
+  discard: {
+    raw: gameState.discards.map(discardArray => stringifyDiscards(discardArray)),
+    parsed: [[], [], [], []],
+    valid: [true, true, true, true],
+    errors: ['', '', '', '']
+  }
 })
 
 function validateDora(input) {
-  doraInput.error = ''
-  doraInput.raw = input
+  inputs.dora.error = ''
+  inputs.dora.raw = input
   // validate syntax
   const doraRegex = /\s*([1-7][mpsz]|[089][mps])\s*/g
   const { result, valid } = parseInput(doraRegex, input)
-  doraInput.parsed = result
-  doraInput.valid = valid
+  inputs.dora.parsed = result
+  inputs.dora.valid = valid
   if (!valid) {
-    doraInput.error = 'Text in red is invalid in syntax'
+    inputs.dora.error = 'Text in red is invalid in syntax'
     return
   }
   // validate the number of doras
-  if (doraInput.parsed.length < 1) {
-    doraInput.valid = false
-    doraInput.error = 'Too few doras'
+  if (inputs.dora.parsed.length < 1) {
+    inputs.dora.valid = false
+    inputs.dora.error = 'Too few doras'
     return
   }
-  if (doraInput.parsed.length > 5) {
-    doraInput.valid = false
-    doraInput.error = 'Too many doras'
+  if (inputs.dora.parsed.length > 5) {
+    inputs.dora.valid = false
+    inputs.dora.error = 'Too many doras'
     return
   }
-  const doras = doraInput.parsed.map(part => part.text.trim())
+  const doras = inputs.dora.parsed.map(part => part.text.trim())
   for (let t of doras) {
     tileCnt.get(t).push({source: 'dora'})
   }
   return doras
 }
 function validateSelfClosedHand(input) {
-  selfClosedHandInput.error = ''
-  selfClosedHandInput.raw = input
+  inputs.selfClosedHand.error = ''
+  inputs.selfClosedHand.raw = input
   // validate syntax
   const closedHandRegex = /\s*([0-9]+[mps]|[1-7]+z)\s*/g
   const { result, valid } = parseInput(closedHandRegex, input)
-  selfClosedHandInput.parsed = result
-  selfClosedHandInput.valid = valid
+  inputs.selfClosedHand.parsed = result
+  inputs.selfClosedHand.valid = valid
   if (!valid) {
-    selfClosedHandInput.error = 'Text in red is invalid in syntax'
+    inputs.selfClosedHand.error = 'Text in red is invalid in syntax'
     return
   }
-  // validate the number of tiles
+  // validate the number of tiles   TODO:改！这个不能用单域检查
   const tileStrings = compactFormatToArray(input)
-  const expectedTileCnt = 14 - gameState.calls[0].length * 3
-  if (tileStrings.length < expectedTileCnt) {
-    selfClosedHandInput.valid = false
-    selfClosedHandInput.error =
-        `Too few tiles for a 'which to discard' scenario. You should have ${expectedTileCnt} tiles in your closed hand`
-    return
-  } else if (tileStrings.length > expectedTileCnt) {
-    selfClosedHandInput.valid = false
-    selfClosedHandInput.error =
-        `Too many tiles for a 'which to discard' scenario. You should have ${expectedTileCnt} tiles in your closed hand`
-    return
-  }
+  // const expectedTileCnt = 14 - gameState.calls[0].length * 3
+  // if (tileStrings.length < expectedTileCnt) {
+  //   inputs.selfClosedHand.valid = false
+  //   inputs.selfClosedHand.error =
+  //       `Too few tiles for a 'which to discard' scenario. You should have ${expectedTileCnt} tiles in your closed hand`
+  //   return
+  // } else if (tileStrings.length > expectedTileCnt) {
+  //   inputs.selfClosedHand.valid = false
+  //   inputs.selfClosedHand.error =
+  //       `Too many tiles for a 'which to discard' scenario. You should have ${expectedTileCnt} tiles in your closed hand`
+  //   return
+  // }
   for (let t of tileStrings) {
     tileCnt.get(t).push({source: 'selfClosedHand'})
   }
@@ -109,13 +111,13 @@ function validateSelfClosedHand(input) {
   return sorted
 }
 function validateCall(playerIdx, input) {
-  callInputs.errors[playerIdx] = ''
-  callInputs.raw[playerIdx] = input
+  inputs.call.errors[playerIdx] = ''
+  inputs.call.raw[playerIdx] = input
   // validate syntax
   const callRegex = /\s*([1-7][mpsz]|[089][mps])*[CPAMK]([1-7][mpsz]|[089][mps])+\s*/g
   const { result, valid } = parseInput(callRegex, input)
-  callInputs.parsed[playerIdx] = result
-  callInputs.valid[playerIdx] = valid
+  inputs.call.parsed[playerIdx] = result
+  inputs.call.valid[playerIdx] = valid
   // validate call logic
   let callCnt = 0
 
@@ -126,53 +128,53 @@ function validateCall(playerIdx, input) {
   function validateCallLogic(tokens, i) {
     if (tokens.includes('C')) {
       if (tokens.length < 4) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Too few tiles for a call of chi`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Too few tiles for a call of chi`
       } else if (tokens.length > 4) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Too many tiles for a call of chi. Do you forget a space?`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Too many tiles for a call of chi. Do you forget a space?`
       } else if (tokens.indexOf('C') !== 0) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Chi can only be called on player to the left`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Chi can only be called on player to the left`
       } else {
         const nums = [tileStrToInt(tokens[1]), tileStrToInt(tokens[2]), tileStrToInt(tokens[3])]
         nums.sort()
         if (nums[2] > 40) {
-          callInputs.parsed[playerIdx][i].valid = false
-          callInputs.valid[playerIdx] = false
-          callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-              `${callInputs.parsed[playerIdx][i].text.trim()}: Honor tiles can not chi`
+          inputs.call.parsed[playerIdx][i].valid = false
+          inputs.call.valid[playerIdx] = false
+          inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+              `${inputs.call.parsed[playerIdx][i].text.trim()}: Honor tiles can not chi`
         } else if (nums[2] - nums[0] === 0) {
-          callInputs.parsed[playerIdx][i].valid = false
-          callInputs.valid[playerIdx] = false
-          callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-              `${callInputs.parsed[playerIdx][i].text.trim()}: A call of chi must be a sequence. Do you mean pon (P)?`
+          inputs.call.parsed[playerIdx][i].valid = false
+          inputs.call.valid[playerIdx] = false
+          inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+              `${inputs.call.parsed[playerIdx][i].text.trim()}: A call of chi must be a sequence. Do you mean pon (P)?`
         } else if (nums[2] - nums[0] !== 2) {
-          callInputs.parsed[playerIdx][i].valid = false
-          callInputs.valid[playerIdx] = false
-          callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-              `${callInputs.parsed[playerIdx][i].text.trim()}: A call of chi must be a sequence`
+          inputs.call.parsed[playerIdx][i].valid = false
+          inputs.call.valid[playerIdx] = false
+          inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+              `${inputs.call.parsed[playerIdx][i].text.trim()}: A call of chi must be a sequence`
         } else {
           callCnt++
         }
       }
     } else if (tokens.includes('P')) {
       if (tokens.length < 4) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Too few tiles for a call of pon`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Too few tiles for a call of pon`
       } else if (tokens.length > 4) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Too many tiles for a call of pon. Do you forget a space?`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Too many tiles for a call of pon. Do you forget a space?`
       } else {
         const nums = []
         for (const token of tokens) {
@@ -183,35 +185,35 @@ function validateCall(playerIdx, input) {
         }
         nums.sort()
         if (nums[2] - nums[0] === 2) {
-          callInputs.parsed[playerIdx][i].valid = false
-          callInputs.valid[playerIdx] = false
-          callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-              `${callInputs.parsed[playerIdx][i].text.trim()}: A call of pon must be a triplet. Do you mean chi (C)?`
+          inputs.call.parsed[playerIdx][i].valid = false
+          inputs.call.valid[playerIdx] = false
+          inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+              `${inputs.call.parsed[playerIdx][i].text.trim()}: A call of pon must be a triplet. Do you mean chi (C)?`
         } else if (nums[2] - nums[0] !== 0) {
-          callInputs.parsed[playerIdx][i].valid = false
-          callInputs.valid[playerIdx] = false
-          callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-              `${callInputs.parsed[playerIdx][i].text.trim()}: A call of pon must be a triplet`
+          inputs.call.parsed[playerIdx][i].valid = false
+          inputs.call.valid[playerIdx] = false
+          inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+              `${inputs.call.parsed[playerIdx][i].text.trim()}: A call of pon must be a triplet`
         } else {
           callCnt++
         }
       }
     } else if (tokens.includes('M')) {
       if (tokens.length < 5) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Too few tiles for a call of minkan`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Too few tiles for a call of minkan`
       } else if (tokens.length > 5) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Too many tiles for a call of minkan. Do you forget a space?`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Too many tiles for a call of minkan. Do you forget a space?`
       } else if (tokens.indexOf('M') === 2) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Please enter --M------ to describe minkan player across`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Please enter --M------ to describe minkan player across`
       } else {
         const nums = []
         for (const token of tokens) {
@@ -222,30 +224,30 @@ function validateCall(playerIdx, input) {
         }
         nums.sort()
         if (nums[3] - nums[0] !== 0) {
-          callInputs.parsed[playerIdx][i].valid = false
-          callInputs.valid[playerIdx] = false
-          callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-              `${callInputs.parsed[playerIdx][i].text.trim()}: A call of minkan must be a quad`
+          inputs.call.parsed[playerIdx][i].valid = false
+          inputs.call.valid[playerIdx] = false
+          inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+              `${inputs.call.parsed[playerIdx][i].text.trim()}: A call of minkan must be a quad`
         } else {
           callCnt++
         }
       }
     } else if (tokens.includes('K')) {
       if (tokens.length < 5) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Too few tiles for a call of kakan`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Too few tiles for a call of kakan`
       } else if (tokens.length > 5) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Too many tiles for a call of kakan. Do you forget a space?`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Too many tiles for a call of kakan. Do you forget a space?`
       } else if (tokens.indexOf('K') === 2) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: Please enter --K------ to describe kakan player across`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: Please enter --K------ to describe kakan player across`
       } else {
         const nums = []
         for (const token of tokens) {
@@ -256,49 +258,49 @@ function validateCall(playerIdx, input) {
         }
         nums.sort()
         if (nums[3] - nums[0] !== 0) {
-          callInputs.parsed[playerIdx][i].valid = false
-          callInputs.valid[playerIdx] = false
-          callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-              `${callInputs.parsed[playerIdx][i].text.trim()}: A call of kakan must be a quad`
+          inputs.call.parsed[playerIdx][i].valid = false
+          inputs.call.valid[playerIdx] = false
+          inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+              `${inputs.call.parsed[playerIdx][i].text.trim()}: A call of kakan must be a quad`
         } else {
           callCnt++
         }
       }
     } else if (tokens.includes('A')) {
       if (tokens.length > 2) {
-        callInputs.parsed[playerIdx][i].valid = false
-        callInputs.valid[playerIdx] = false
-        callInputs.errors[playerIdx] = callInputs.errors[playerIdx] ||
-            `${callInputs.parsed[playerIdx][i].text.trim()}: You only need one tile to describe an ankan. Or do you forget a space?`
+        inputs.call.parsed[playerIdx][i].valid = false
+        inputs.call.valid[playerIdx] = false
+        inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] ||
+            `${inputs.call.parsed[playerIdx][i].text.trim()}: You only need one tile to describe an ankan. Or do you forget a space?`
       } else {
         callCnt++
       }
     }
   }
 
-  for (let i = 0; i < callInputs.parsed[playerIdx].length; i++) {
-    if (callInputs.parsed[playerIdx][i].valid === false) {
+  for (let i = 0; i < inputs.call.parsed[playerIdx].length; i++) {
+    if (inputs.call.parsed[playerIdx][i].valid === false) {
       continue
     }
-    const tokens = callInputs.parsed[playerIdx][i].text.trim().match(/[CPAMK]|[1-7][mpsz]|[089][mps]/g)
+    const tokens = inputs.call.parsed[playerIdx][i].text.trim().match(/[CPAMK]|[1-7][mpsz]|[089][mps]/g)
     validateCallLogic(tokens, i);
     if (callCnt === 4) {
-      if (i !== callInputs.parsed[playerIdx].length - 1) {
-        callInputs.valid[playerIdx] = false
-        for (let j = i + 1; j < callInputs.parsed[playerIdx].length; j++) {
-          callInputs.parsed[playerIdx][j].valid = false
+      if (i !== inputs.call.parsed[playerIdx].length - 1) {
+        inputs.call.valid[playerIdx] = false
+        for (let j = i + 1; j < inputs.call.parsed[playerIdx].length; j++) {
+          inputs.call.parsed[playerIdx][j].valid = false
         }
-        callInputs.errors[playerIdx] = 'The number of calls should not exceed 4'
+        inputs.call.errors[playerIdx] = 'The number of calls should not exceed 4'
         return
       }
     }
   }
 
-  if (!callInputs.valid[playerIdx]) {
-    callInputs.errors[playerIdx] = callInputs.errors[playerIdx] || 'Text in red is invalid in syntax'
+  if (!inputs.call.valid[playerIdx]) {
+    inputs.call.errors[playerIdx] = inputs.call.errors[playerIdx] || 'Text in red is invalid in syntax'
   } else {
     const newCalls = []
-    for (const part of callInputs.parsed[playerIdx]) {
+    for (const part of inputs.call.parsed[playerIdx]) {
       newCalls.push(part.text.trim())
     }
 
@@ -325,18 +327,18 @@ function validateCall(playerIdx, input) {
   }
 }
 function validateDiscard(playerIdx, input) {
-  discardInputs.errors[playerIdx] = ''
-  discardInputs.raw[playerIdx] = input
+  inputs.discard.errors[playerIdx] = ''
+  inputs.discard.raw[playerIdx] = input
   // validate syntax
   const discardRegex = /\s*([1-7][mpsz]|[089][mps])[tcr]*\s*/g
   const { result, valid } = parseInput(discardRegex, input)
-  discardInputs.parsed[playerIdx] = result
-  discardInputs.valid[playerIdx] = valid
+  inputs.discard.parsed[playerIdx] = result
+  inputs.discard.valid[playerIdx] = valid
   if (!valid) {
-    discardInputs.errors[playerIdx] = 'Text in red is invalid in syntax'
+    inputs.discard.errors[playerIdx] = 'Text in red is invalid in syntax'
     return
   }
-  const discards = discardInputs.parsed[playerIdx].map(part => part.text.trim())
+  const discards = inputs.discard.parsed[playerIdx].map(part => part.text.trim())
   const tiles = discards.reduce((acc, d) => {
     if (!d.includes('c')) {
       acc.push(d.slice(0, 2))
@@ -368,17 +370,17 @@ function validateTileCnt() {
     }
   }
   for (const tile of exceededTiles.dora) {
-    doraInput.error += `Too many ${tile} on the table! `
+    inputs.dora.error += `Too many ${tile} on the table! `
   }
   for (const tile of exceededTiles.selfClosedHand) {
-    selfClosedHandInput.error += `Too many ${tile} on the table! `
+    inputs.selfClosedHand.error += `Too many ${tile} on the table! `
   }
   for (let i = 0; i < 4; i++) {
     for (const tile of exceededTiles.call[i]) {
-      callInputs.errors[i] += `Too many ${tile} on the table! `
+      inputs.call.errors[i] += `Too many ${tile} on the table! `
     }
     for (const tile of exceededTiles.discard[i]) {
-      discardInputs.errors[i] += `Too many ${tile} on the table! `
+      inputs.discard.errors[i] += `Too many ${tile} on the table! `
     }
   }
 }
@@ -386,13 +388,13 @@ function validateTileCnt() {
 function validate() {
   resetTileCnt()
 
-  const doras = validateDora(doraInput.raw)
-  const selfClosedHand = validateSelfClosedHand(selfClosedHandInput.raw)
+  const doras = validateDora(inputs.dora.raw)
+  const selfClosedHand = validateSelfClosedHand(inputs.selfClosedHand.raw)
   const calls = []
   const discards = []
   for (let i = 0; i < 4; i++) {
-    calls.push(validateCall(i, callInputs.raw[i]))
-    discards.push(validateDiscard(i, discardInputs.raw[i]))
+    calls.push(validateCall(i, inputs.call.raw[i]))
+    discards.push(validateDiscard(i, inputs.discard.raw[i]))
   }
 
   validateTileCnt()
@@ -409,24 +411,29 @@ function validate() {
 }
 
 function isStateValid() {
-  if (doraInput.error) {
+  if (inputs.dora.error) {
     return false
   }
-  if (selfClosedHandInput.error) {
+  if (inputs.selfClosedHand.error) {
     return false
   }
   for (let i = 0; i < 4; i++) {
-    if (callInputs.errors[i]) {
+    if (inputs.call.errors[i]) {
       return false
     }
-    if (discardInputs.errors[i]) {
+    if (inputs.discard.errors[i]) {
       return false
     }
   }
   return true
 }
 
-watchEffect(() => validate())
+watch([
+  () => inputs.dora.raw,
+  () => inputs.selfClosedHand.raw,
+  () => inputs.call.raw,
+  () => inputs.discard.raw,
+], () => validate(), {deep: true})
 
 // Converts ['4m', '5m', '5m', '6m', '7m', '7m', '8m', '7m'] (already sorted) into '4556778m7m'
 function compactClosedHand(closedHandArray) {
@@ -548,6 +555,48 @@ function parseInput(regex, input) {
 }
 
 const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState)
+
+function exportPNG() {
+  if (!isStateValid()) {
+    alert('Input panel contains errors. Please fix them before export')
+    return
+  }
+  exportPngWithMetadata()
+}
+
+async function importPNG(event) {
+  await importMetadataFromPNG(event)
+  resetInputPanel()
+}
+
+function resetInputPanel() {
+  inputs.dora = {
+    raw: gameState.doras.join(' '),
+    parsed: [],
+    valid: true,
+    error: ''
+  }
+  inputs.selfClosedHand = {
+    raw: compactClosedHand(gameState.closedHands[0]),
+    parsed: [],
+    valid: true,
+    error: ''
+  }
+  inputs.call = {
+    raw: gameState.calls.map(callArray => callArray.join(' ')),
+    parsed: [[], [], [], []],
+    valid: [true, true, true, true],
+    errors: ['', '', '', '']
+  }
+  inputs.discard = {
+    raw: gameState.discards.map(discardArray => stringifyDiscards(discardArray)),
+    parsed: [[], [], [], []],
+    valid: [true, true, true, true],
+    errors: ['', '', '', '']
+  }
+  // inputs.discard.raw = gameState.discards.map(discardArray => stringifyDiscards(discardArray))
+  // console.log('done')
+}
 </script>
 
 <template>
@@ -568,15 +617,15 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
         <el-input-number v-model.number="gameState.storedStick" :min="0"/>
       </el-form-item>
 
-      <el-form-item label="Dora Indicator" :error="doraInput.error">
-        <el-input v-model="doraInput.raw"/>
-        <div v-if="!doraInput.valid" class="input-mirror">
-              <span v-for="part in doraInput.parsed" class="mirror-span" :class="{ error: !part.valid }">
+      <el-form-item label="Dora Indicator" :error="inputs.dora.error">
+        <el-input v-model="inputs.dora.raw"/>
+        <div v-if="!inputs.dora.valid" class="input-mirror">
+              <span v-for="part in inputs.dora.parsed" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
               </span>
         </div>
       </el-form-item>
-      <el-divider v-if="doraInput.error" border-style="none"/>
+      <el-divider v-if="inputs.dora.error" border-style="none"/>
 
       <el-collapse v-model="activeCollapses" expand-icon-position="left">
         <el-collapse-item title="Self" :name="0">
@@ -589,35 +638,35 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
             <el-input-number v-model.number="gameState.points[0]" :step="100" step-strictly/>
           </el-form-item>
 
-          <el-form-item label="Closed Hand" label-position="top" :error="selfClosedHandInput.error">
-            <el-input v-model="selfClosedHandInput.raw"/>
-            <div v-if="!selfClosedHandInput.valid" class="input-mirror">
-              <span v-for="part in selfClosedHandInput.parsed" class="mirror-span" :class="{ error: !part.valid }">
+          <el-form-item label="Closed Hand" label-position="top" :error="inputs.selfClosedHand.error">
+            <el-input v-model="inputs.selfClosedHand.raw"/>
+            <div v-if="!inputs.selfClosedHand.valid" class="input-mirror">
+              <span v-for="part in inputs.selfClosedHand.parsed" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="selfClosedHandInput.error" border-style="none"/>
+          <el-divider v-if="inputs.selfClosedHand.error" border-style="none"/>
 
-          <el-form-item label="Call" label-position="top" :error="callInputs.errors[0]">
-            <el-input v-model="callInputs.raw[0]"/>
-            <div v-if="!callInputs.valid[0]" class="input-mirror">
-              <span v-for="part in callInputs.parsed[0]" class="mirror-span" :class="{ error: !part.valid }">
+          <el-form-item label="Call" label-position="top" :error="inputs.call.errors[0]">
+            <el-input v-model="inputs.call.raw[0]"/>
+            <div v-if="!inputs.call.valid[0]" class="input-mirror">
+              <span v-for="part in inputs.call.parsed[0]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="callInputs.errors[0]" border-style="none"/>
+          <el-divider v-if="inputs.call.errors[0]" border-style="none"/>
 
-          <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[0]">
-            <el-input type="textarea" v-model="discardInputs.raw[0]"/>
-            <div v-if="!discardInputs.valid[0]" class="input-mirror">
-              <span v-for="part in discardInputs.parsed[0]" class="mirror-span" :class="{ error: !part.valid }">
+          <el-form-item label="Discard" label-position="top" :error="inputs.discard.errors[0]">
+            <el-input type="textarea" v-model="inputs.discard.raw[0]"/>
+            <div v-if="!inputs.discard.valid[0]" class="input-mirror">
+              <span v-for="part in inputs.discard.parsed[0]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="discardInputs.errors[0]" border-style="none"/>
+          <el-divider v-if="inputs.discard.errors[0]" border-style="none"/>
         </el-collapse-item>
 
         <el-collapse-item title="Right" :name="1">
@@ -625,25 +674,25 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
             <el-input-number v-model.number="gameState.points[1]" :step="100" step-strictly/>
           </el-form-item>
 
-          <el-form-item label="Call" label-position="top" :error="callInputs.errors[1]">
-            <el-input v-model="callInputs.raw[1]"/>
-            <div v-if="!callInputs.valid[1]" class="input-mirror">
-              <span v-for="part in callInputs.parsed[1]" class="mirror-span" :class="{ error: !part.valid }">
+          <el-form-item label="Call" label-position="top" :error="inputs.call.errors[1]">
+            <el-input v-model="inputs.call.raw[1]"/>
+            <div v-if="!inputs.call.valid[1]" class="input-mirror">
+              <span v-for="part in inputs.call.parsed[1]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="callInputs.errors[1]" border-style="none"/>
+          <el-divider v-if="inputs.call.errors[1]" border-style="none"/>
 
-          <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[1]">
-            <el-input type="textarea" v-model="discardInputs.raw[1]"/>
-            <div v-if="!discardInputs.valid[1]" class="input-mirror">
-              <span v-for="part in discardInputs.parsed[1]" class="mirror-span" :class="{ error: !part.valid }">
+          <el-form-item label="Discard" label-position="top" :error="inputs.discard.errors[1]">
+            <el-input type="textarea" v-model="inputs.discard.raw[1]"/>
+            <div v-if="!inputs.discard.valid[1]" class="input-mirror">
+              <span v-for="part in inputs.discard.parsed[1]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="discardInputs.errors[1]" border-style="none"/>
+          <el-divider v-if="inputs.discard.errors[1]" border-style="none"/>
         </el-collapse-item>
 
         <el-collapse-item title="Opposite" :name="2">
@@ -651,25 +700,25 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
             <el-input-number v-model.number="gameState.points[2]" :step="100" step-strictly/>
           </el-form-item>
 
-          <el-form-item label="Call" label-position="top" :error="callInputs.errors[2]">
-            <el-input v-model="callInputs.raw[2]"/>
-            <div v-if="!callInputs.valid[2]" class="input-mirror">
-              <span v-for="part in callInputs.parsed[2]" class="mirror-span" :class="{ error: !part.valid }">
+          <el-form-item label="Call" label-position="top" :error="inputs.call.errors[2]">
+            <el-input v-model="inputs.call.raw[2]"/>
+            <div v-if="!inputs.call.valid[2]" class="input-mirror">
+              <span v-for="part in inputs.call.parsed[2]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="callInputs.errors[2]" border-style="none"/>
+          <el-divider v-if="inputs.call.errors[2]" border-style="none"/>
 
-          <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[2]">
-            <el-input type="textarea" v-model="discardInputs.raw[2]"/>
-            <div v-if="!discardInputs.valid[2]" class="input-mirror">
-              <span v-for="part in discardInputs.parsed[2]" class="mirror-span" :class="{ error: !part.valid }">
+          <el-form-item label="Discard" label-position="top" :error="inputs.discard.errors[2]">
+            <el-input type="textarea" v-model="inputs.discard.raw[2]"/>
+            <div v-if="!inputs.discard.valid[2]" class="input-mirror">
+              <span v-for="part in inputs.discard.parsed[2]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="discardInputs.errors[2]" border-style="none"/>
+          <el-divider v-if="inputs.discard.errors[2]" border-style="none"/>
         </el-collapse-item>
 
         <el-collapse-item title="Left" :name="3">
@@ -677,25 +726,25 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
             <el-input-number v-model.number="gameState.points[3]" :step="100" step-strictly/>
           </el-form-item>
 
-          <el-form-item label="Call" label-position="top" :error="callInputs.errors[3]">
-            <el-input v-model="callInputs.raw[3]"/>
-            <div v-if="!callInputs.valid[3]" class="input-mirror">
-              <span v-for="part in callInputs.parsed[3]" class="mirror-span" :class="{ error: !part.valid }">
+          <el-form-item label="Call" label-position="top" :error="inputs.call.errors[3]">
+            <el-input v-model="inputs.call.raw[3]"/>
+            <div v-if="!inputs.call.valid[3]" class="input-mirror">
+              <span v-for="part in inputs.call.parsed[3]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="callInputs.errors[3]" border-style="none"/>
+          <el-divider v-if="inputs.call.errors[3]" border-style="none"/>
 
-          <el-form-item label="Discard" label-position="top" :error="discardInputs.errors[3]">
-            <el-input type="textarea" v-model="discardInputs.raw[3]"/>
-            <div v-if="!discardInputs.valid[3]" class="input-mirror">
-              <span v-for="part in discardInputs.parsed[3]" class="mirror-span" :class="{ error: !part.valid }">
+          <el-form-item label="Discard" label-position="top" :error="inputs.discard.errors[3]">
+            <el-input type="textarea" v-model="inputs.discard.raw[3]"/>
+            <div v-if="!inputs.discard.valid[3]" class="input-mirror">
+              <span v-for="part in inputs.discard.parsed[3]" class="mirror-span" :class="{ error: !part.valid }">
                 {{ part.text }}
               </span>
             </div>
           </el-form-item>
-          <el-divider v-if="discardInputs.errors[3]" border-style="none"/>
+          <el-divider v-if="inputs.discard.errors[3]" border-style="none"/>
         </el-collapse-item>
       </el-collapse>
     </el-form>
@@ -708,9 +757,9 @@ const {importMetadataFromPNG, exportPngWithMetadata} = useImportExport(gameState
       <!--            <button class="btn" id="importBtn">Import PNG</button>-->
       <label class="btn">
         Import PNG
-        <input type="file" accept=".png" @change="importMetadataFromPNG" style="display: none;" />
+        <input type="file" accept=".png" @change="importPNG" style="display: none;" />
       </label>
-      <button class="btn" id="exportBtn" @click="exportPngWithMetadata">Export PNG</button>
+      <button class="btn" id="exportBtn" @click="exportPNG">Export PNG</button>
     </div>
   </div>
 </template>
