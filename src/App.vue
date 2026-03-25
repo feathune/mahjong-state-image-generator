@@ -33,11 +33,6 @@ const playerWinds = computed(() => Array.from({length: 4}, (_, i) => windStr[(ga
 
 <template>
   <main>
-    <div id="import-image">
-      <img src="@/assets/Regular_shortnames/0m.svg" alt="0m" style="display: none;" />
-      <img src="@/assets/Regular_shortnames/0p.svg" alt="0p" style="display: none;" />
-      <img src="@/assets/Regular_shortnames/0s.svg" alt="0s" style="display: none;" />
-    </div>
     <div class="outer">
       <div class="grid-main">
         <div class="grid-hand pov-p0 grid-hand-p0">
@@ -54,7 +49,7 @@ const playerWinds = computed(() => Array.from({length: 4}, (_, i) => windStr[(ga
         <div class="grid-hand pov-p3 grid-hand-p3">
           <div class="pov-p3 hand-closed-p3">
             <div v-for="_ in gameState.closedHands[3]" class="tileDiv">
-            <img class="tileImg" src="@/assets/Regular_shortnames/back.svg" alt="Tile back"/>
+            <img class="tileImg" src="/Regular_shortnames/back.svg" alt="Tile back"/>
             </div>
           </div>
           <div class="pov-p3 hand-calls-p3">
@@ -64,7 +59,7 @@ const playerWinds = computed(() => Array.from({length: 4}, (_, i) => windStr[(ga
         <div class="grid-hand pov-p2 grid-hand-p2">
           <div class="pov-p2 hand-closed-p2">
             <div v-for="_ in gameState.closedHands[2]" class="tileDiv">
-            <img class="tileImg" src="@/assets/Regular_shortnames/back.svg" alt="Tile back"/>
+            <img class="tileImg" src="/Regular_shortnames/back.svg" alt="Tile back"/>
             </div>
           </div>
           <div class="pov-p2 hand-calls-p2">
@@ -74,7 +69,7 @@ const playerWinds = computed(() => Array.from({length: 4}, (_, i) => windStr[(ga
         <div class="grid-hand pov-p1 grid-hand-p1">
           <div class="pov-p1 hand-closed-p1">
             <div v-for="_ in gameState.closedHands[1]" class="tileDiv">
-            <img class="tileImg" src="@/assets/Regular_shortnames/back.svg" alt="Tile back"/>
+            <img class="tileImg" src="/Regular_shortnames/back.svg" alt="Tile back"/>
             </div>
           </div>
           <div class="pov-p1 hand-calls-p1">

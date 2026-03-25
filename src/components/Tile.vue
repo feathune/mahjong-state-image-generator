@@ -29,7 +29,7 @@ if (data === 'back') {
 <template>
   <div class="tileDiv">
     <img class="tileImg" :class="{'tsumogiri': tsumogiri, 'rotate': rotate, 'called': called, 'float': float}"
-         :src="`@/assets/Regular_shortnames/${tileName}.svg`" :alt="tileName"/>
+         :src="`/Regular_shortnames/${tileName}.svg`" :alt="tileName"/>
   </div>
 </template>
 
