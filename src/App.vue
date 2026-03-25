@@ -33,6 +33,11 @@ const playerWinds = computed(() => Array.from({length: 4}, (_, i) => windStr[(ga
 
 <template>
   <main>
+    <div id="import-image">
+      <img src="@/assets/Regular_shortnames/0m.svg" alt="0m" style="display: none;" />
+      <img src="@/assets/Regular_shortnames/0p.svg" alt="0p" style="display: none;" />
+      <img src="@/assets/Regular_shortnames/0s.svg" alt="0s" style="display: none;" />
+    </div>
     <div class="outer">
       <div class="grid-main">
         <div class="grid-hand pov-p0 grid-hand-p0">
