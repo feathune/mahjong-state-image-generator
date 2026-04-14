@@ -1,6 +1,5 @@
 <script setup>
-import {ref, computed, reactive, provide} from "vue";
-import {useImportExport} from "@/composables/useImportExport.js";
+import {computed, reactive, provide} from "vue";
 import InputPanel from "@/components/InputPanel.vue";
 import Tile from "@/components/Tile.vue";
 import Call from "@/components/Call.vue";
@@ -17,10 +16,10 @@ const gameState = reactive({
   closedHands: [['4m', '5m', '5m', '6m', '7m', '7m', '8m', '7m'], 7, 10, 13],
   calls: [['C2m3m4m', '6z6zP6z'], ['C2p3p4p', 'C7p6p8p'], ['A7s'], []],
   discards: [
-      ['4z', '1z', '2s', '9p', '5zt', '7pc', '2pc', '1p', '3zt', '9pt', '2z', '2st', '2pt', '6st', '4pt', '2mt', '9pt', '4pt'],
-      ['3z', '7z', '6zc', '1st', '9mt', '1m', '1m', '7zt', '9st', '3zt', '1st', '4z', '5z', '3s', '3s', '1pt', '1s', '8pt'],
-      ['2z', '1z', '8p', '6p', '1zt', '9s', '9s', '7pt', '7zt', '2zt', '5st', '2mr', '3st', '2pt', '7pt', '7pt', '1st', '2zt'],
-      ['2s', '7z', '2st', '1m', '5zt', '5p', '8p', '5pt', '3s', '2mc', '0pt', '9sr', '1pt', '1pt', '9mt', '3zt', '1mt', '6pt']
+    ['4z', '1z', '2s', '9p', '5zt', '7pc', '2pc', '1p', '3zt', '9pt', '2z', '2st', '2pt', '6st', '4pt', '2mt', '9pt', '4pt'],
+    ['3z', '7z', '6zc', '1st', '9mt', '1m', '1m', '7zt', '9st', '3zt', '1st', '4z', '5z', '3s', '3s', '1pt', '1s', '8pt'],
+    ['2z', '1z', '8p', '6p', '1zt', '9s', '9s', '7pt', '7zt', '2zt', '5st', '2mr', '3st', '2pt', '7pt', '7pt', '1st', '2zt'],
+    ['2s', '7z', '2st', '1m', '5zt', '5p', '8p', '5pt', '3s', '2mc', '0pt', '9sr', '1pt', '1pt', '9mt', '3zt', '1mt', '6pt']
   ]
 })
 
@@ -29,6 +28,19 @@ provide('gameState', gameState)
 const paddedDoras = computed(() => gameState.doras.concat(Array(5 - gameState.doras.length).fill('back')))
 const windStr = ['E', 'S', 'W', 'N']
 const playerWinds = computed(() => Array.from({length: 4}, (_, i) => windStr[(gameState.selfWind + i) % 4]))
+const tilesLeft = computed(() => {
+  let discardCnt = gameState.discards.reduce((acc, p) =>
+      acc + p.reduce((acc, d) =>
+          d.includes('c') ? acc : acc + 1,
+        0),
+    0)
+  let kanCnt = gameState.calls.reduce((acc, p) =>
+      acc + p.reduce((acc, c) =>
+          (c.includes('M') || c.includes('A') || c.includes('K')) ? acc + 1 : acc,
+        0),
+    0)
+  return 70 - 1 - discardCnt - kanCnt
+})
 </script>
 
 <template>
@@ -92,7 +104,7 @@ const playerWinds = computed(() => Array.from({length: 4}, (_, i) => windStr[(ga
           <button class="info-round">
             {{ gameState.round }}-{{ gameState.honba }}{{ gameState.storedStick > 0 ? ' +' + gameState.storedStick * 1000 : '' }}
           </button>
-          <span class="info-tiles-left"></span>
+          <span class="info-tiles-left">x{{ tilesLeft }}</span>
           <div class="info-doras">
             <Tile v-for="tile in paddedDoras" :key="tile" :data="tile"/>
           </div>
