@@ -45,6 +45,8 @@ export function useImportExport(gameState) {
     }
 
     return {
+        exportToJson,
+        importFromJson,
         importMetadataFromPNG,
         exportPngWithMetadata
     }
